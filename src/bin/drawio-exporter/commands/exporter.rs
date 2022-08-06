@@ -28,6 +28,13 @@ pub fn args() -> Vec<Arg> {
             .default_value("export")
             .short("o")
             .long("output"),
+        arg("output-mode")
+            .help("Relative or absolute directory")
+            .value_name("output-mode")
+            .possible_values(&["relative", "absolute"])
+            .default_value("relative")
+            // .short("om")
+            .long("output-mode"),
         arg("on-changes")
             .help("Export drawio files only if it's newer than exported files")
             .long("on-changes"),
@@ -107,6 +114,7 @@ pub fn exec(args: &ArgMatches<'_>) -> Result<()> {
         application: args.value_of("application"),
         drawio_desktop_headless: args.is_present("drawio-desktop-headless"),
         folder: args.value_of("folder").unwrap(),
+        output_mode: args.value_of("output-mode").unwrap(),
         on_filesystem_changes: args.is_present("on-changes"),
         on_git_changes_since_reference: args.value_of("git-reference"),
         remove_page_suffix: args.is_present("remove-page-suffix"),

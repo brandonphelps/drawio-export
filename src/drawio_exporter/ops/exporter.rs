@@ -16,6 +16,7 @@ pub struct ExporterOptions<'a> {
     pub application: Option<&'a str>,
     pub drawio_desktop_headless: bool,
     pub folder: &'a str,
+    pub output_mode: &'a str,
     pub on_filesystem_changes: bool,
     pub on_git_changes_since_reference: Option<&'a str>,
     pub remove_page_suffix: bool,
@@ -47,9 +48,12 @@ pub fn exporter(options: ExporterOptions) -> Result<()> {
         )));
     }
 
+    // input files. 
     let drawio_files = match options.on_git_changes_since_reference {
         None => {
             let filter_options = match options.on_filesystem_changes {
+                // this is watching the main folder for items, if
+                // absolute path is specified, it may or may not include these subentires.
                 true => FilterOptions::filter_on(options.folder),
                 false => FilterOptions::no_filtering(),
             };
@@ -59,10 +63,18 @@ pub fn exporter(options: ExporterOptions) -> Result<()> {
     }
     .with_context(|| format!("can't explore path {}", &input_path.display()))?;
 
+    // application to run with.
     let drawio_desktop = DrawioDesktop::new(options.application, options.drawio_desktop_headless)?;
 
-    prepare_export_folders(options.folder, &drawio_files)
-        .with_context(|| format!("can't prepare export folders named {}", options.folder))?;
+    // ensure that all the locations we'll export to will exist. 
+    // @@ output folder will need to change in absolute?
+    // currently this function will take in all the files and
+    // adds to it the options.folder to do the prepare
+    // if in 
+    if options.output_mode == "relative" {
+        prepare_export_folders(options.folder, &drawio_files)
+            .with_context(|| format!("can't prepare export folders named {}", options.folder))?;
+    }
 
     let drawio_path_base = RelativePath::new(options.path);
     for (path, mxfile) in drawio_files {
@@ -92,11 +104,26 @@ pub fn exporter(options: ExporterOptions) -> Result<()> {
                 file_stem_suffix,
                 real_format
             );
-            let output_path = path
-                .parent()
-                .unwrap()
-                .join(options.folder)
-                .join(&output_filename);
+
+            // todo: switch to enums for output_mode.
+            let output_path = match options.output_mode {
+                "relative" => {
+                path.parent()
+                    .unwrap()
+                    .join(options.folder)
+                    .join(&output_filename)
+                },
+                "absolute" => { 
+                    let parent_dir = PathBuf::from(options.folder);
+                    fs::create_dir_all(&parent_dir).with_context(|| {
+                        format!(
+                            "can't prepare export folder named {}",
+                            parent_dir.display())
+                    })?;
+                    parent_dir.join(&output_filename)
+                },
+                &_ => { todo!("switch to enums") } 
+            };
 
             println!("+++ generate {} file", real_format);
 
@@ -157,6 +184,8 @@ fn generate_formatted_text_file(
         .unwrap()
         .join(options.folder)
         .join(formatted_text_filename);
+
+
 
     let mut file = File::create(&formatted_text_path)?;
     if options.format.eq("adoc") {
