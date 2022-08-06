@@ -79,7 +79,7 @@ pub fn exporter(options: ExporterOptions) -> Result<()> {
     let drawio_path_base = RelativePath::new(options.path);
     for (path, mxfile) in drawio_files {
         let drawio_file_path = drawio_path_base.relative(RelativePath::new(path.to_str().unwrap()));
-        println!("+ export file : {}", drawio_file_path);
+        println!("+ export file : {:?}", drawio_file_path);
         let with_page_suffix = !(options.remove_page_suffix && mxfile.diagrams.len() == 1);
         for (position, diagram) in mxfile.diagrams.iter().enumerate() {
             let position_to_display = position + 1;
@@ -114,7 +114,7 @@ pub fn exporter(options: ExporterOptions) -> Result<()> {
                     .join(&output_filename)
                 },
                 "absolute" => { 
-                    let parent_dir = PathBuf::from(options.folder);
+                    let parent_dir = PathBuf::from(options.folder).join(path.parent().unwrap());
                     fs::create_dir_all(&parent_dir).with_context(|| {
                         format!(
                             "can't prepare export folder named {}",
