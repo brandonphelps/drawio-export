@@ -22,6 +22,7 @@ impl<'a> DrawioDesktop<'a> {
 
     pub fn execute(&self, arguments: ExportArguments<'a>) -> Result<()> {
         let mut shell_arguments = arguments.as_shell_arguments();
+        println!("Shell arguments: {:?}", shell_arguments);
 
         if self.is_headless {
             shell_arguments.push("--no-sandbox");

@@ -114,7 +114,8 @@ pub fn exporter(options: ExporterOptions) -> Result<()> {
                     .join(&output_filename)
                 },
                 "absolute" => { 
-                    let parent_dir = PathBuf::from(options.folder).join(path.parent().unwrap());
+                    println!("--- Computing output directory for absolute path: {:?}", options.folder);
+                    let parent_dir = PathBuf::from(options.folder); //.join(path.parent().unwrap());
                     fs::create_dir_all(&parent_dir).with_context(|| {
                         format!(
                             "can't prepare export folder named {}",
@@ -126,6 +127,8 @@ pub fn exporter(options: ExporterOptions) -> Result<()> {
             };
 
             println!("+++ generate {} file", real_format);
+            println!("--- output filepath {}", output_path.to_str().unwrap());
+            
 
             drawio_desktop.execute(ExportArguments {
                 recursive: false,
